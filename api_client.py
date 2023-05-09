@@ -11,6 +11,8 @@ cache = Cache()
 def refresh_and_retry(func, *args, **kwargs):
     try:
         response = func(*args, **kwargs)
+        print(response.status_code)
+        print(f"Before cookies: {cache.get_cookies()}")
         update_cookies(response)
         return response.json()
     except httpx.HTTPStatusError as e:
@@ -26,6 +28,7 @@ def update_cookies(response):
     cookies = response.cookies
     if len(cookies) > 0:
         cache.set_cookies(cookies)
+        print(f"!!!!!!!!!After cookies: {cache.get_cookies()}")
 def add_infamy_bulk(data):
     return refresh_and_retry(_add_infamy_bulk, data)
 

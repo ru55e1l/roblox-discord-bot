@@ -48,9 +48,6 @@ def run_discord_bot():
         username = str(message.author)
         user_message = str(message.content)
         channel = str(message.channel)
-
-        print(f'{username} said: "{user_message}" ({channel})')
-
         await send_message(message, user_message, is_private=False)
 
 
