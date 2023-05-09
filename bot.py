@@ -1,3 +1,5 @@
+from typing import List
+
 import discord
 import responses
 import os
@@ -51,70 +53,41 @@ def run_discord_bot():
 
         await send_message(message, user_message, is_private=False)
 
-    @bot.tree.command(name="leaderboard", description="Show the top members with the most infamy")
-    async def leaderboard(interaction: discord.Interaction):
-        members = get_top_infamy()
-        embeds = []
-        counter = 0
-        for i, member in enumerate(members, start=1):
-            if counter == 0:
-                embed = discord.Embed(title='Infamy Leaderboard')
-            embed.add_field(name=f"#{i} {member['username']}", value=f"{member['infamy']} infamy", inline=False)
-            embed.color = 0xE7583D
-            embed.set_thumbnail(url="https://tr.rbxcdn.com/957949d9b78d5d6cc276b82dd33bac96/150/150/Image/Png")
-            embed.timestamp = datetime.datetime.utcnow()
-            counter += 1
-            if counter == 10:
-                embeds.append(embed)
-                counter = 0
-        if counter > 0:
-            embeds.append(embed)
-        view = PaginatorView(embeds)
-        await interaction.response.send_message(embed=view.initial, view=view, ephemeral=True)
 
-    async def createEmbed(members):
+    async def createFile(members):
         background = Editor(Canvas((800, 1000), color="#E7583D"))
         card_right_shape = [(500, 0), (800, 0), (800, 300), (800, 300)]
-        background.polygon(card_right_shape, color="#FFFFFF")
-        background.rectangle((0, 0), width=60, height=1000, fill="#FFFFFF")
         second_picture_url = "https://tr.rbxcdn.com/957949d9b78d5d6cc276b82dd33bac96/150/150/Image/Png"
         second_picture = await load_image_async(str(second_picture_url))
         second_picture = Editor(second_picture).resize((150, 150))
 
-        poppinns = Font.poppins(size=40)
+        poppinns = Font.poppins(size=35)
         for i, member in enumerate(members):
-            yPos = 40 + i * 100
-            text_width, text_height = poppinns.getsize(str(member['rank']))
-            max_width = 40
-            if text_width > max_width:
-                ratio = max_width / text_width
-                font_size = int(40 * ratio)
-                poppinns = Font.poppins(size=font_size)
-                text_width, text_height = poppinns.getsize(str(member['rank']))
-            background.text((45, yPos), str(member['rank']), font=poppinns, color="#282828", align='right')
+            yPos = 75 + i * 94
+            if i < 3:
+                profile_picture_url = member['headshotUrl']
+                profile_picture = await load_image_async(str(profile_picture_url))
+                profile = Editor(profile_picture).resize((60, 60)).circle_image()
+                background.paste(profile, (6, yPos-15))
+            else:
+                background.text((45, yPos), f"{str(member['rank'])}", font=poppinns, color="#FFFFFF", align='right')
+            background.text((60, yPos), f" - {member['username']}: {member['infamy']}", font=poppinns, color="#FFFFFF", align='left')
 
-
+        background.polygon(card_right_shape, color="#FFFFFF")
         background.paste(second_picture, (625, 20))
 
 
         file = discord.File(fp=background.image_bytes, filename=f"leaderboard{str(members[0]['rank'])}.png")
         embed = discord.Embed()
         embed.set_image(url=f"attachment://leaderboard.png")
-        return embed, file
+        return file
 
-    @bot.tree.command(name="wipleaderboard", description="Show the top members with the most infamy")
-    async def wipleaderboard(interaction: discord.Interaction):
+    @bot.tree.command(name="leaderboard", description="Show the top members with the most infamy")
+    async def leaderboard(interaction: discord.Interaction):
         members = get_top_infamy()
         embeds = []
-        files = []
-        for i in range(0, len(members), 10):
-            members_slice = members[i:i + 10]
-            embed, file = await createEmbed(members_slice)
-            embeds.append(embed)
-            files.append(file)
-
-        view = FilePaginatorView(files)
-        await interaction.response.send_message(file=view._files[0], view=view, ephemeral=True)
+        file = await createFile(members[:10])
+        await interaction.response.send_message(file=file)
 
     @bot.tree.command(name="infamy", description="Show the infamy of a member by their username")
     @app_commands.describe(robloxname="username")
@@ -184,8 +157,44 @@ def run_discord_bot():
         except Exception as e:
             await interaction.response.send_message('User not in group, or has no infamy', ephemeral=True)
 
-    #  @bot.tree.command(name="addinfamy", description="add infamy based on roblox name")
-    #  @app_commands.describe(robloxnames = "List of usernames")
-    #  async def bulkaddInfamy(interaction: discord.Interaction, robloxname: List[str]):
+    @bot.tree.command(name="addinfamy", description="add infamy based on roblox username")
+    @app_commands.describe(usernames = "List of usernames")
+    @app_commands.describe(infamyammount="ammount of infamy to give")
+    async def addinfamy(interaction: discord.Interaction, usernames: str, infamyammount: int):
+        usernames_list = usernames.split()
+        has_senior_officer_role = any(role.name.lower() == "senior officer" for role in interaction.user.roles)
+        if not has_senior_officer_role:
+            await interaction.response.send_message('You are not a Senior Officer.', ephemeral=True)
+        else:
+            data = {
+                "usernames": usernames_list,
+                "infamyToAdd": infamyammount
+            }
+            try:
+                result = add_infamy_bulk(data)
+                await interaction.response.send_message(
+                    f"Successfully added {infamyammount} infamy to the specified users.", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"An error occurred while adding infamy: {e}", ephemeral=True)
+
+    @bot.tree.command(name="removeinfamy", description="remove infamy based on roblox username")
+    @app_commands.describe(usernames="List of usernames")
+    @app_commands.describe(infamyammount="ammount of infamy to remove")
+    async def removeinfamy(interaction: discord.Interaction, usernames: str, infamyammount: int):
+        usernames_list = usernames.split()
+        has_senior_officer_role = any(role.name.lower() == "senior officer" for role in interaction.user.roles)
+        if not has_senior_officer_role:
+            await interaction.response.send_message('You are not a Senior Officer.', ephemeral=True)
+        else:
+            data = {
+                "usernames": usernames_list,
+                "infamyToRemove": infamyammount
+            }
+            try:
+                result = remove_infamy_bulk(data)
+                await interaction.response.send_message(
+                    f"Successfully removed {infamyammount} infamy to the specified users.", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"An error occurred while adding infamy: {e}", ephemeral=True)
 
     bot.run(TOKEN)

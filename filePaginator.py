@@ -20,7 +20,7 @@ class FilePaginatorView(discord.ui.View):
 
     @discord.ui.button(label='⬅️')
     async def previous(self, interaction: discord.Interaction, _):
-        self._fileQueue.rotate(-1)
+        self._fileQueue.rotate(1)
         attachments = [self._fileQueue[0]]
         await interaction.response.edit_message(attachments=attachments)
 
