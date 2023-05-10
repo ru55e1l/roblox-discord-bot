@@ -81,14 +81,16 @@ def run_discord_bot():
 
     @bot.tree.command(name="leaderboard", description="Show the top members with the most infamy")
     async def leaderboard(interaction: discord.Interaction):
+        await interaction.response.send_message(content="..The 44th is Thinking..", ephemeral=False)
         members = get_top_infamy()
         embeds = []
         file = await createFile(members[:10])
-        await interaction.response.send_message(file=file)
+        await interaction.edit_original_response(attachments=[file], content=None)
 
     @bot.tree.command(name="infamy", description="Show the infamy of a member by their username")
     @app_commands.describe(robloxname="username")
     async def infamy(interaction: discord.Interaction, robloxname: str):
+        await interaction.response.send_message(content="..The 44th is Thinking..", ephemeral=False)
         try:
             member_infamy = get_infamy(robloxname)
             member = member_infamy['member']
@@ -150,18 +152,19 @@ def run_discord_bot():
                 )
 
             file = discord.File(fp=background.image_bytes, filename="levelcard.png")
-            await interaction.response.send_message(file=file)
+            await interaction.edit_original_response(attachments=[file], content=None)
         except Exception as e:
-            await interaction.response.send_message('User not in group, or has no infamy', ephemeral=True)
+            await interaction.edit_original_response(content='User not in group, or has no infamy')
 
     @bot.tree.command(name="addinfamy", description="add infamy based on roblox username")
     @app_commands.describe(usernames = "List of usernames")
     @app_commands.describe(infamyammount="ammount of infamy to give")
     async def addinfamy(interaction: discord.Interaction, usernames: str, infamyammount: int):
+        await interaction.response.send_message(content="..The 44th is Thinking..", ephemeral=True)
         usernames_list = usernames.split()
         has_senior_officer_role = any(role.name.lower() == "senior officer" for role in interaction.user.roles)
         if not has_senior_officer_role:
-            await interaction.response.send_message('You are not a Senior Officer.', ephemeral=True)
+            await interaction.edit_original_response(content='You are not a Senior Officer.')
         else:
             data = {
                 "usernames": usernames_list,
@@ -169,19 +172,21 @@ def run_discord_bot():
             }
             try:
                 result = add_infamy_bulk(data)
-                await interaction.response.send_message(
-                    f"Successfully added {infamyammount} infamy to the specified users.", ephemeral=True)
+                await interaction.edit_original_response(  # Update message with the result
+                    content=f"Successfully added {infamyammount} infamy to the specified users.")
             except Exception as e:
-                await interaction.response.send_message(f"An error occurred while adding infamy: {e}", ephemeral=True)
+                await interaction.edit_original_response(  # Update message with the error
+                    content=f"An error occurred while adding infamy: {e}")
 
     @bot.tree.command(name="removeinfamy", description="remove infamy based on roblox username")
     @app_commands.describe(usernames="List of usernames")
     @app_commands.describe(infamyammount="ammount of infamy to remove")
     async def removeinfamy(interaction: discord.Interaction, usernames: str, infamyammount: int):
+        await interaction.response.send_message(content="..The 44th is Thinking..", ephemeral=True)
         usernames_list = usernames.split()
         has_senior_officer_role = any(role.name.lower() == "senior officer" for role in interaction.user.roles)
         if not has_senior_officer_role:
-            await interaction.response.send_message('You are not a Senior Officer.', ephemeral=True)
+            await interaction.edit_original_response(content='You are not a Senior Officer.')
         else:
             data = {
                 "usernames": usernames_list,
@@ -189,9 +194,10 @@ def run_discord_bot():
             }
             try:
                 result = remove_infamy_bulk(data)
-                await interaction.response.send_message(
-                    f"Successfully removed {infamyammount} infamy to the specified users.", ephemeral=True)
+                await interaction.edit_original_response(  # Update message with the result
+                    content=f"Successfully removed {infamyammount} infamy to the specified users.")
             except Exception as e:
-                await interaction.response.send_message(f"An error occurred while adding infamy: {e}", ephemeral=True)
+                await interaction.edit_original_response(  # Update message with the result
+                    content=f"An error occurred while adding infamy: {e}")
 
     bot.run(TOKEN)

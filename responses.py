@@ -19,11 +19,11 @@ def handle_response(message) -> str:
     if p_message == '44 x sg':
         return 'https://cdn.discordapp.com/attachments/532361338404732929/1101375291756130365/44th_x_SG_GOAT.png'
 
-    if p_message == 'Rule 1':
+    if p_message == 'rule 1':
         return 'Rule 1 states: Do unto others as you would have them do unto you.'
 
     if p_message == 'keb':
         return 'Keb\'s Law States: No man ever steps in the same river twice, for it\'s not the same river and he\'s not the same man.'
 
     if p_message == 'russel':
-        return 'https://cdn.discordapp.com/attachments/1101381583417655306/1102765144230076568/image.png'
+        return 'https://cdn.discordapp.com/attachments/718810904745213972/893601573069029376/Message_for_Xeqto.mp4'
