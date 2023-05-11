@@ -29,6 +29,7 @@ def run_discord_bot():
     TOKEN = os.getenv('TOKEN')
     intents = discord.Intents.default()
     intents.message_content = True
+    intents.members = True
     bot = commands.Bot(command_prefix="!", intents=intents)
 
     @bot.event
@@ -112,7 +113,7 @@ def run_discord_bot():
             background.polygon(card_right_shape, color="#FFFFFF")
             background.paste(profile, (30, 30))
             background.paste(second_picture, (730, 25))
-            username = f"{member['groupRank']} {member['username']}"
+            username = f"#{member['leaderboardrank']} {member['groupRank']} {member['username']}"
             text_width, text_height = poppinns.getsize(username)
             max_width = 400
             if text_width > max_width:
@@ -172,9 +173,13 @@ def run_discord_bot():
             }
             try:
                 result = add_infamy_bulk(data)
-                await interaction.edit_original_response(  # Update message with the result
-                    content=f"Successfully added {infamyammount} infamy to the specified users.")
+                if len(result['error']) > 0:
+                    error_str = '\n'.join(result['error'])
+                    await interaction.edit_original_response(content=f"{error_str}")
+                else:
+                    await interaction.edit_original_response(content=f"Infamy successfully added")
             except Exception as e:
+
                 await interaction.edit_original_response(  # Update message with the error
                     content=f"An error occurred while adding infamy: {e}")
 
@@ -194,10 +199,49 @@ def run_discord_bot():
             }
             try:
                 result = remove_infamy_bulk(data)
-                await interaction.edit_original_response(  # Update message with the result
-                    content=f"Successfully removed {infamyammount} infamy to the specified users.")
+                if len(result['error']) > 0:
+                    error_str = '\n'.join(result['error'])
+                    await interaction.edit_original_response(content=f"{error_str}")
+                else:
+                    await interaction.edit_original_response(content=f"Infamy successfully removed")
             except Exception as e:
                 await interaction.edit_original_response(  # Update message with the result
-                    content=f"An error occurred while adding infamy: {e}")
+                    content=f"An error occurred while removing infamy: {e}")
+
+    @bot.tree.command(name="getvc", description="Get usernames in vc")
+    async def getvc(interaction: discord.Interaction):
+        # Get the member who invoked the command
+        member = interaction.user
+
+        # Check if the member is connected to a voice channel
+        if member.voice and member.voice.channel:
+            voice_channel = member.voice.channel
+            # Get a list of members in the voice channel
+            members = voice_channel.members
+
+            # Create an empty list to store the server profile names
+            server_profile_names = []
+
+            # Iterate over each member and get their server profile name
+            for member in members:
+                # Assuming the server profile name is stored as a custom attribute or field
+                # Replace "server_profile_name" with the actual attribute or field name
+                server_profile_name = member.display_name
+
+                # Add the server profile name to the list
+                server_profile_names.append(server_profile_name)
+
+            names_string = "\n".join(server_profile_names)
+            # Send a message with the server profile names
+            await interaction.response.send_message(
+                content=f"Server Profile Names in the Voice Channel:\n{names_string}",
+                ephemeral=True
+            )
+        else:
+            # If the member is not connected to a voice channel, send an error message
+            await interaction.response.send_message(
+                "You are not connected to a voice channel.",
+                ephemeral=True
+            )
 
     bot.run(TOKEN)

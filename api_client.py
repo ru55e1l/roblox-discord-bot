@@ -11,7 +11,6 @@ cache = Cache()
 def refresh_and_retry(func, *args, **kwargs):
     try:
         response = func(*args, **kwargs)
-        print(response.status_code)
         update_cookies(response)
         return response.json()
     except httpx.HTTPStatusError as e:
